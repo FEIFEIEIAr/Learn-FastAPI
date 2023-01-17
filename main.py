@@ -1,27 +1,59 @@
-from fastapi import FastAPI, Header, Body, Form
-from fastapi.responses import HTMLResponse, JSONResponse, FileResponse, RedirectResponse, Response
+import os
+from fastapi import FastAPI, HTTPException
+from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.sessions import SessionMiddleware
+from config import settings
+from fastapi.staticfiles import StaticFiles
+from app.api.Base import router
+from app.core.Events import startup, stopping
+from app.core.Exception import http_error_handler, http422_error_handler, unicorn_exception_handler, UnicornException
+from app.core.Middleware import Middleware
 
-app = FastAPI()
+application = FastAPI(
+    debug=settings.APP_DEBUG,
+    description=settings.DESCRIPTION,
+    version=settings.VERSION,
+    title=settings.PROJECT_NAME
+    )
+
+# 事件监听
+# 当application启动时，执行startup函数
+application.add_event_handler("startup", startup(application))
+# 当application关闭时，执行stopping函数
+application.add_event_handler("shutdown", stopping(application))
+
+# 异常错误处理
+# 重写异常处理函数。前面的是参数，后面的是函数
+application.add_exception_handler(HTTPException, http_error_handler)
+application.add_exception_handler(RequestValidationError, http422_error_handler)
+application.add_exception_handler(UnicornException, unicorn_exception_handler)
+
+# 路由
+application.include_router(router)
+
+# 中间件
+application.add_middleware(Middleware)
+application.add_middleware(
+    SessionMiddleware,
+    secret_key="session",
+    session_cookie="f_id",
+    # max_age=4
+)
+application.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.CORS_ORIGINS,
+    allow_credentials=settings.CORS_ALLOW_CREDENTIALS,
+    allow_methods=settings.CORS_ALLOW_METHODS,
+    allow_headers=settings.CORS_ALLOW_HEADERS,
+)
+
+# 静态资源目录
+application.mount('/static', StaticFiles(directory=os.path.join(os.getcwd(), "static")))
+
+app = application
 
 
-@app.get("/")
-async def root():
-    html_content = """
-    <html>
-        <body><p style="color:red">Hello World</p></body>
-    </html>"""
-    return HTMLResponse(content=html_content, status_code=200)
-
-# @app.get("/user/{user_id}")   # http://127.0.0.1:8000/user/7
-@app.get("/user")  # http://127.0.0.1:8000/user?user_id=7
-def users(user_id, token=Header(None)):
-    return {"message": "Hello Users", "user_id": user_id, "token": token}
-
-@app.route("/login", methods=["POST", "GET", "PUT"])
-def login(username=Form(None), password=Form(None)):
-    return {"data": {"username": username, "password": password}}
-
-
-if __name__=='__main__':
+if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app="main:app", reload=True,)
+    uvicorn.run("main:app", reload=True)
