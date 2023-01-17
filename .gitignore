@@ -1,5 +1,6 @@
 test.*
 *.zip
+.vscode/
 *.rar
 package/
 # Byte-compiled / optimized / DLL files
