@@ -1,9 +1,16 @@
-from fastapi import APIRouter, Request
+from fastapi import APIRouter
+
+from app.api.Login import login, index
 
 
-router = APIRouter()
+ApiRouter = APIRouter(prefix="/v1", tags=["api路由"])
 
 
-@router.get("/")
-async def home(request: Request):
-    return 'fastapi'
+@ApiRouter.get('/input')
+async def home(num: int):
+    return {"num": num, "data": [{"num": num, "data": []}, {"num": num, "data": []}]}
+
+
+ApiRouter.get("/index", tags=["api路由"], summary="注册接口")(index)
+
+ApiRouter.post("/login", tags=["api路由"], summary="登陆接口")(login)

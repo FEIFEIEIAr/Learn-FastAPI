@@ -12,6 +12,7 @@ class Config(BaseSettings):
     DESCRIPTION: str = 'Things to learn about FastAPI'
     # 静态资源目录
     STATIC_DIR: str = os.path.join(os.getcwd(), "static")
+    TEMPLATE_DIR: str = os.path.join(STATIC_DIR, "templates")
     # 跨域请求
     CORS_ORIGINS: List[str] = ['*']
     CORS_ALLOW_CREDENTIALS: bool = True
