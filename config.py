@@ -1,9 +1,12 @@
 import os.path
+from dotenv import load_dotenv, find_dotenv
 from pydantic import BaseSettings
 from typing import List
 
 
 class Config(BaseSettings):
+    # 加载环境变量
+    load_dotenv(find_dotenv(), override=True)
     # 调试模式
     APP_DEBUG: bool = True
     # 项目信息

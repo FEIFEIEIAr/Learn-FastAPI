@@ -1,5 +1,6 @@
 from typing import Callable
 from fastapi import FastAPI
+from app.database.Mysql import register_mysql
 
 
 def startup(app: FastAPI) -> Callable:
@@ -11,6 +12,7 @@ def startup(app: FastAPI) -> Callable:
     async def app_start() -> None:
         # APP启动完成后触发
         print("网站启动")
+        await register_mysql(app)
         
     return app_start
 
