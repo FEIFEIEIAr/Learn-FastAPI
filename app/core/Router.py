@@ -1,5 +1,5 @@
 """
-路由聚合
+路由聚合, 聚合API路由和视图路由
 """
 from app.api.Base import ApiRouter
 from app.views.Base import ViewsRouter
