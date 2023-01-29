@@ -2,7 +2,9 @@ test.*
 *.zip
 .vscode/
 *.rar
+notice*.md
 package/
+.dist
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
