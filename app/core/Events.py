@@ -1,4 +1,5 @@
 from typing import Callable
+from aioredis import Redis
 from fastapi import FastAPI
 
 from app.database.Mysql import register_mysql
@@ -33,5 +34,9 @@ def stopping(app: FastAPI) -> Callable:
     async def app_stop() -> None:
         # APP停止时触发
         print("网站关闭")
+        
+        # 关闭缓存
+        cache: Redis = await app.state.cache
+        await cache.close()
         
     return app_stop

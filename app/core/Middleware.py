@@ -21,9 +21,9 @@ class Middleware:
             await self.app(scope, receive, send)
             return
         start_time = time.time()
-        req = Request(scope, receive, send)
-        if not req.session.get("session"):
-            req.session.setdefault("session", random_str())
+        request = Request(scope, receive, send)  # 获取request
+        if not request.session.get("session"):  # 如果session不存在则创建
+            request.session.setdefault("session", random_str())  # 初始化session
 
         async def send_wrapper(message: Message) -> None:
             process_time = time.time() - start_time
