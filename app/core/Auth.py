@@ -12,7 +12,8 @@ from starlette import status
 from config import settings
 from app.models.Base import User, Access
 
-OAuth2 = OAuth2PasswordBearer("")
+OAuth2 = OAuth2PasswordBearer(settings.SWAGGER_UI_OAUTH2_REDIRECT_URL, scheme_name="User",
+                              scopes={"is_admin": "超级管理员", "not_admin": "普通管理员"})
 
 
 def create_access_token(data: dict):
@@ -41,21 +42,6 @@ async def check_permissions(req: Request, security_scopes: SecurityScopes, token
     :return:
     """
     # ----------------------------------------验证JWT token------------------------------------------------------------
-    print("token", token)
-    print("scopes", security_scopes.scopes)
-    # 从请求头获取token
-    authorization: str = req.headers.get("Authorization")
-    scheme, param = get_authorization_scheme_param(authorization)
-
-    if not authorization or scheme.lower() != "bearer":
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not authenticated",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    # 取出 token
-    token = param
     try:
         # token解密
         payload = jwt.decode(

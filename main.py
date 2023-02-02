@@ -5,6 +5,8 @@ from starlette.middleware.sessions import SessionMiddleware
 from tortoise.exceptions import OperationalError, DoesNotExist
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
+from fastapi.openapi.utils import get_openapi
+from fastapi.openapi.docs import (get_redoc_html, get_swagger_ui_html, get_swagger_ui_oauth2_redirect_html)
 
 from config import settings
 from app.core.Router import AllRouter
@@ -19,6 +21,52 @@ application = FastAPI(
     title=settings.PROJECT_NAME
     )
 
+# custom_openapi
+def custom_openapi():
+    if application.openapi_schema:
+        return application.openapi_schema
+    openapi_schema = get_openapi(
+        description=settings.DESCRIPTION,
+        version=settings.VERSION,
+        title=settings.PROJECT_NAME,
+        routes=app.routes,
+    )
+    openapi_schema["info"]["x-logo"] = {
+        "url": "/static/logo-teal.png"
+    }
+    application.openapi_schema = openapi_schema
+    return application.openapi_schema
+
+
+application.openapi = custom_openapi
+
+
+# custom_swagger_ui_html
+@application.get("/docs", include_in_schema=False)
+async def custom_swagger_ui_html():
+    return get_swagger_ui_html(
+        openapi_url=application.openapi_url,
+        title=application.title + " - Swagger UI",
+        oauth2_redirect_url=application.swagger_ui_oauth2_redirect_url,
+        swagger_js_url="/static/swagger-ui-bundle.js",
+        swagger_css_url="/static/swagger-ui.css",
+    )
+
+
+# swagger_ui_oauth2_redirect_url
+# @application.get(application.swagger_ui_oauth2_redirect_url, include_in_schema=False)
+# async def swagger_ui_redirect():
+#     return get_swagger_ui_oauth2_redirect_html()
+
+
+# redoc
+@application.get("/redoc", include_in_schema=False)
+async def redoc_html():
+    return get_redoc_html(
+        openapi_url=application.openapi_url,
+        title=application.title + " - ReDoc",
+        redoc_js_url="/static/redoc.standalone.js",
+    )
 
 # 事件监听
 application.add_event_handler("startup", startup(application))

@@ -1,38 +1,43 @@
 from fastapi import APIRouter, Security
 
-from app.api.Login import login, index
-from app.api.test_redis import test_my_redis, test_my_redis_depends
 from app.core.Auth import check_permissions
-from app.api.User import user_info, user_add, user_del, account_login
+from app.api.User import user_info, user_add, user_del, account_login, user_list
+from app.schemas.User import CurrentUser, UserLogin
+from app.api.Test import test_oath2
 
 
-ApiRouter = APIRouter(prefix="/v1", tags=["api路由"])
+ApiRouter = APIRouter(prefix="/api/v1")
+AdminRouter = APIRouter(prefix="/admin")
+
+ApiRouter.post("/test/oath2", tags=["测试oath2授权"])(test_oath2)
+
+AdminRouter.post("/account/login", response_model=UserLogin, tags=["管理员登陆"], summary="用户登陆")(account_login)
+
+AdminRouter.get("/user/info",
+                tags=["用户管理"],
+                summary="获取当前管理员信息",
+                dependencies=[Security(check_permissions)],
+                response_model=CurrentUser
+                )(user_info)
+
+AdminRouter.get("/user/list",
+                tags=["用户管理"],
+                summary="获取管理员列表",
+                dependencies=[Security(check_permissions, scopes=["user_list"])],
+                # response_model=CurrentUser
+                )(user_list)
 
 
-ApiRouter.get("/index", tags=["api路由"], summary="注册接口")(index)
+AdminRouter.delete("/user/del",
+                   tags=["用户管理"],
+                   summary="管理员删除",
+                   dependencies=[Security(check_permissions, scopes=["user_delete"])]
+                   )(user_del)
 
-ApiRouter.post("/user/account/login", tags=["用户接口"], summary="用户登陆")(account_login)
-
-# FastAPI中两种Redis的使用方式
-ApiRouter.get("/test/my/redis", tags=["api路由"], summary="fastapi的state方式")(test_my_redis)
-
-ApiRouter.get("/test/my/redis/depends", tags=["api路由"], summary="依赖注入方式")(test_my_redis_depends)
-
-# Jwt, 用户管理
-ApiRouter.get("/admin/user/info",
-              tags=["用户管理"],
-              summary="获取用户信息",
-              dependencies=[Security(check_permissions, scopes=["user_info"])]
-              )(user_info)
-
-ApiRouter.delete("/admin/user/del",
+AdminRouter.post("/user/add",
                  tags=["用户管理"],
-                 summary="用户删除",
-                 dependencies=[Security(check_permissions, scopes=["user_delete"])]
-                 )(user_del)
+                 summary="管理员添加",
+                 dependencies=[Security(check_permissions, scopes=["user_add"])]
+                 )(user_add)
 
-ApiRouter.post("/admin/user/add",
-               tags=["用户管理"],
-               summary="用户添加",
-               # dependencies=[Security(check_permissions, scopes=["user_add"])]
-               )(user_add)
+ApiRouter.include_router(AdminRouter)
